@@ -34,13 +34,17 @@ def aoi_to_wkt(aoi):
     This function is used to import an AOI definition into an OST project.
     The AOIs definition can be from difffrent sources, i.e. an ISO3 country
     code (that calls GeoPandas low-resolution country boundaries),
-    a WKT string,
+    a WKT string or a path to a vector file.
 
-    :param aoi: AOI , which can be an ISO3 country code, a WKT String or
-                a path to a shapefile, a GeoPackage or a GeoJSON file
-    :type aoi: str/Path
-    :return: AOI as WKT string
-    :rtype: WKT string
+    Parameters
+    ----------
+    aoi : str, Path
+        AOI, which can be an ISO3 country code, a WKT String or a path to a shapefile, a GeoPackage or a GeoJSON file.
+
+    Returns
+    ----------
+    aoi_wkt : WKT string
+        AOI as a WKT string.
     """
 
     # see if aoi alread in wkt
@@ -80,10 +84,17 @@ def aoi_to_wkt(aoi):
 
 
 def get_epsg(prjfile):
-    """
+    """Get EPSG code from shapefile projection file (.prj)
 
-    :param prjfile:
-    :return:
+    Parameters
+    ----------
+    prjfile : str, Path
+        Path to the projection file.
+
+    Returns
+    ----------
+    str
+        EPSG code.
     """
 
     prj_file = open(prjfile, "r")
@@ -98,8 +109,15 @@ def get_epsg(prjfile):
 def get_proj4(prjfile):
     """Get the proj4 string from a projection file of a shapefile
 
-    :param prjfile:
-    :return:
+    Parameters
+    ----------
+    prjfile : str, Path
+        Path to the projection file.
+
+    Returns
+    ----------
+    str
+       proj4 string.
     """
 
     prj_file = open(prjfile, "r")
@@ -128,10 +146,16 @@ def get_proj4(prjfile):
 
 
 def epsg_to_wkt_projection(epsg_code):
-    """
+    """Convert EPSG code to WKT
 
-    :param epsg_code:
-    :return:
+    Parameters
+    ----------
+    epsg_code : str
+
+    Returns
+    ----------
+    str
+        WKT projection.
     """
 
     spatial_ref = osr.SpatialReference()
@@ -143,10 +167,19 @@ def epsg_to_wkt_projection(epsg_code):
 def reproject_geometry(geom, inproj4, out_epsg):
     """Reproject a wkt geometry based on EPSG code
 
-    :param geom: an ogr geom object
-    :param inproj4: a proj4 string
-    :param out_epsg: the EPSG code to which the geometry should transformed
-    :return: the transformed geometry (ogr-geometry object)
+    Parameters
+    ----------
+    geom : str
+        WKT geometry.
+    inproj4 : str
+        A proj4 string.
+    out_epsg : str
+        The EPSG code to which the geometry should be reprojected.
+
+    Returns
+    ----------
+    geom : OGR geometry
+        Reprojected OGR geometry.
     """
 
     geom = ogr.CreateGeometryFromWkt(geom)
@@ -170,12 +203,21 @@ def reproject_geometry(geom, inproj4, out_epsg):
 
 def geodesic_point_buffer(lon, lat, meters, envelope=False):
     """
+    Helper function for creating a geodesic buffer around a specified point.
 
-    :param lat:
-    :param lon:
-    :param meters:
-    :param envelope:
-    :return:
+    You can specify how many meters to buffer around, as well as specify the boolean argument `envelope` to make it a bounding box.
+
+    Parameters
+    ----------
+    lon : float
+    lat : float
+    meters : float
+    envelope : bool, default=True
+
+    Returns
+    ----------
+    str
+        WKT string of the buffered geometry
     """
 
     proj_crs = ProjectedCRS(
@@ -196,7 +238,7 @@ def geodesic_point_buffer(lon, lat, meters, envelope=False):
     return geom.wkt
 
 
-def latlon_to_wkt(lat, lon, buffer_degree=None, buffer_meter=None, envelope=False):
+def latlon_to_wkt(lon, lat, buffer_degree=None, buffer_meter=None, envelope=False):
     """A helper function to create a WKT representation of Lat/Lon pair
 
     This function takes lat and lon values and returns
@@ -206,19 +248,23 @@ def latlon_to_wkt(lat, lon, buffer_degree=None, buffer_meter=None, envelope=Fals
     If envelope is set to True, the circular buffer will be
     squared by the extent buffer radius.
 
-    :param lat:
-    :type lat: str
-    :param lon:
-    :type lon: str
-    :param buffer_degree:
-    :type buffer_degree: float, optional
-    :param buffer_meter:
-    :type buffer_meter: float, optional
-    :param envelope:
-    :type envelope: bool, optional
+    Parameters
+    ----------
+    lon : int, float
+        longitude in decimal degrees
+    lat : int, float
+        latitude in decimal degrees
+    buffer_degree : float, optional
+        degrees to buffer in decimal degrees
+    buffer_meter : float, optional
+            meters to buffer
+    envelope : bool, default=False
+        use the bounding box
 
-    :return: WKT string
-    :rtype: str
+    Returns
+    ----------
+    aoi_wkt : str
+        WKT string of the buffered point.
     """
 
     if buffer_degree is None and buffer_meter is None:
@@ -238,13 +284,23 @@ def latlon_to_wkt(lat, lon, buffer_degree=None, buffer_meter=None, envelope=Fals
 
 
 def wkt_manipulations(wkt, buffer=None, convex=False, envelope=False):
-    """
+    """Wrapper around several ogr vector operations on WKT strings
 
-    :param wkt:
-    :param buffer:
-    :param convex:
-    :param envelope:
-    :return:
+    Parameters
+    ----------
+    wkt : str
+        WKT string
+    buffer : float, optional
+        Buffer size (?in projection units?)
+    convex : bool, default=False
+        wether or not to compute the convex hull
+    envelope : bool, default=False
+        use a bounding box around the geometry
+
+    Returns
+    ----------
+    str
+        WKT string of the transformed geometry.
     """
 
     geom = ogr.CreateGeometryFromWkt(wkt)
@@ -274,11 +330,23 @@ def wkt_manipulations(wkt, buffer=None, convex=False, envelope=False):
 def shp_to_wkt(shapefile, buffer=None, convex=False, envelope=False):
     """A helper function to translate a shapefile into WKT
 
-    :param shapefile:
-    :param buffer:
-    :param convex:
-    :param envelope:
-    :return:
+    Reads the shapefile into a wkt geometry, and uses `wkt_manipulations` if specified.
+
+    Parameters
+    ----------
+    shapefile : str, Path
+        Path to shapefile
+    buffer : float, optional
+        Buffer size (?in projection units?)
+    convex : bool, default=False
+        wether or not to compute the convex hull
+    envelope : bool, default=False
+        use a bounding box around the geometry
+
+    Returns
+    ----------
+    str
+        WKT string of the transformed geometry.
     """
 
     # get filepaths and proj4 string
@@ -307,12 +375,20 @@ def shp_to_wkt(shapefile, buffer=None, convex=False, envelope=False):
 
 
 def latlon_to_shp(lon, lat, shapefile):
-    """
+    """Helper function to save a point defined by lon/lat to a shapefile
 
-    :param lon:
-    :param lat:
-    :param shapefile:
-    :return:
+    Parameters
+    ----------
+    lon : float
+        Longitude in decimal degrees
+    lat : float
+        Latitude in decimal degrees
+    shapefile : str, Path
+        Path to save the shapefile
+
+    Returns
+    ----------
+    None
     """
 
     shapefile = str(shapefile)
@@ -329,10 +405,16 @@ def latlon_to_shp(lon, lat, shapefile):
 
 
 def wkt_to_gdf(wkt):
-    """
+    """Helper function to convert a WKT string to a geopandas GeoDataFrame.
 
-    :param wkt:
-    :return:
+    Parameters
+    ----------
+    wkt : str
+        WKT string
+
+    Returns
+    ----------
+    gdf : pandas.GeoDataFrame (!Check if correct!!)
     """
 
     # load wkt
@@ -400,10 +482,18 @@ def gdf_to_json_geometry(gdf):
 def exterior(infile, outfile, buffer=None):
     """Creates an exterior vector of an input vector
 
-    :param infile:
-    :param outfile:
-    :param buffer:
-    :return:
+    Parameters
+    ----------
+    infile : str, Path
+        paath to input vector
+    outfile : str, Path
+        Path to save the result
+    buffer : float, optional, default=None
+        Buffer size
+
+    Returns
+    ----------
+    None
     """
     gdf = gpd.read_file(infile, crs="epsg:4326")
     gdf.geometry = gdf.geometry.apply(lambda row: Polygon(row.exterior))
@@ -508,7 +598,7 @@ def plot_inventory(aoi, inventory_df, transparency=0.05, annotate=False):
     if annotate:
         import math
 
-        for idx, row in inventory_df.iterrows():
+        for _, row in inventory_df.iterrows():
             # print([row['geometry'].bounds[0],row['geometry'].bounds[3]])
             coord = [row["geometry"].centroid.x, row["geometry"].centroid.y]
             x1, y2, x2, y1 = row["geometry"].bounds
