@@ -22,8 +22,13 @@ logger = logging.getLogger(__name__)
 def ask_credentials():
     """Interactive function asking the user for ASF credentials
 
-    :return: tuple of username and password
-    :rtype: tuple
+    Parameters
+    ----------
+
+    Returns
+    ----------
+    tuple
+        Tuple of username and password.
     """
 
     # SciHub account details (will be asked by execution)
@@ -38,11 +43,19 @@ def ask_credentials():
 
 
 def check_connection(uname, pword):
-    """Check if a connection with scihub can be established
+    """Check if a connection with ASF can be established
 
-    :param uname:
-    :param pword:
-    :return:
+    Parameters
+    ----------
+    uname : str
+        Username
+    pword : str
+        Password
+
+    Returns
+    ----------
+    int
+        Connection status code
     """
 
     # random url to check
@@ -59,7 +72,10 @@ def check_connection(uname, pword):
 
 
 def asf_download_parallel(argument_list):
+    """Wrapper around :meth:`asf_download` so we can call it with multiprocessing.
 
+    Try getting rid of it using functools.partial (only docs just now)
+    """
     url, filename, uname, pword = argument_list
     asf_download(url, filename, uname, pword)
 
@@ -68,12 +84,21 @@ def asf_download_parallel(argument_list):
 def asf_download(url, filename, uname, pword):
     """
     This function will download S1 products from ASF mirror.
-    :param url: the url to the file you want to download
-    :param filename: the absolute path to where the downloaded file should
-                    be written to
-    :param uname: ESA's scihub username
-    :param pword: ESA's scihub password
-    :return:
+
+    Parameters
+    ----------
+    url : str
+        url to the file to be downloaded
+    filename : str
+        Absolute path where the downloaded file should be written
+    uname : str
+        ASF/NASA Earthdata password
+    pword : str
+        ASF/NASA Earthdata username
+
+    Returns
+    ----------
+    None
     """
 
     # extract list of args
@@ -149,7 +174,22 @@ def asf_download(url, filename, uname, pword):
 
 
 def batch_download(inventory_df, download_dir, uname, pword, concurrent=10):
+    """
+    Concurrently downloads scenes from an inventory.
 
+    Parameters
+    ----------
+    inventory_df : pandas.DataFrame
+    download_dir : str, Path
+    uname : str
+        ASF/NASA Earthdata password
+    pword : str
+        ASF/NASA Earthdata username
+
+    Returns
+    ----------
+    None
+    """
     from ost import Sentinel1Scene as S1Scene
 
     # create list with scene ids to download
