@@ -23,10 +23,13 @@ logger = logging.getLogger(__name__)
 def timer(start):
     """A helper function to print a time elapsed statement
 
-    :param start:
-    :type start:
-    :return:
-    :rtype: str
+    Parameters
+    ----------
+    start : str
+
+    Returns
+    -------
+    str
     """
 
     elapsed = time.time() - start
@@ -36,7 +39,13 @@ def timer(start):
 def remove_folder_content(folder):
     """A helper function that cleans the content of a folder
 
-    :param folder:
+    Parameters
+    ----------
+    folder : str, Path
+
+    Returns
+    -------
+    None
     """
 
     for root, dirs, files in os.walk(folder):
@@ -47,12 +56,21 @@ def remove_folder_content(folder):
 
 
 def run_command(command, logfile=None, elapsed=True):
-    """
+    """Wrapper around subprocess.run(), with logging to a file.
 
-    :param command:
-    :param logfile:
-    :param elapsed:
-    :return:
+    Parameters
+    ----------
+    command : str
+        command to run
+    logfile : str, Path, default=None
+        path log file to save the output
+    elapsed : bool, default=True
+        write elapsed time to logger
+
+    Returns
+    -------
+    int
+        process return code
     """
 
     currtime = time.time()
@@ -76,7 +94,16 @@ def run_command(command, logfile=None, elapsed=True):
 
 
 def delete_dimap(dimap_prefix):
-    """Removes both dim and data from a Snap dimap file"""
+    """Removes both dim and data from a Snap dimap file
+
+    Parameters
+    ----------
+    dimap_prefix : Path
+
+    Returns
+    -------
+    None
+    """
 
     if dimap_prefix.with_suffix(".data").exists():
         shutil.rmtree(dimap_prefix.with_suffix(".data"))
@@ -86,7 +113,16 @@ def delete_dimap(dimap_prefix):
 
 
 def delete_shapefile(shapefile):
-    """Removes the shapefile and all its associated files"""
+    """Removes the shapefile and all its associated files
+
+    Parameters
+    ----------
+    shapefile : str, Path
+
+    Returns
+    -------
+    None
+    """
 
     extensions = (".shp", ".prj", ".shx", ".dbf", ".cpg", "shb")
 
@@ -98,7 +134,18 @@ def delete_shapefile(shapefile):
 
 
 def move_dimap(infile_prefix, outfile_prefix, to_tif):
-    """Function to move dimap's data and dim another locations"""
+    """Function to move dimap's data and dim another locations
+
+    Parameters
+    ----------
+    infile_prefix : Path
+    outfile_prefix : Path
+    to_tif : bool
+
+    Returns
+    -------
+    None
+    """
 
     if to_tif:
 
@@ -131,7 +178,18 @@ def move_dimap(infile_prefix, outfile_prefix, to_tif):
 
 
 def check_out_dimap(dimap_prefix, test_stats=True):
+    """Check existence, size and integrity of dimap files
 
+    Parameters
+    ----------
+    dimap_prefix : Path
+    test_stats : bool, default=True
+        wether to use gdal to check file integrity
+
+    Returns
+    -------
+    str if something is not right, else 0.
+    """
     # check if both dim and data exist, else return
     if not dimap_prefix.with_suffix(".dim").exists():
         return f"Output file {dimap_prefix}.dim has not been generated."
@@ -171,7 +229,19 @@ def check_out_dimap(dimap_prefix, test_stats=True):
 
 
 def check_out_tiff(file, test_stats=True):
+    """Checks integrity and existence of tiff
 
+    Parameters
+    ----------
+    file: str, Path
+    test_stats : bool, default=True
+        whether to use gdal to check stats or not
+
+    Returns
+    -------
+    str if something isn't good, else 0
+
+    """
     return_code = 0
     if isinstance(file, str):
         file = Path(file)
@@ -199,7 +269,15 @@ def check_out_tiff(file, test_stats=True):
 
 
 def check_zipfile(filename):
+    """Check integrity of zipfile
 
+    Parameters
+    ----------
+    filename : str, Path
+
+    Returns
+    -------
+    """
     try:
         zip_archive = zipfile.ZipFile(filename)
     except zipfile.BadZipFile as er:
@@ -218,9 +296,16 @@ def check_zipfile(filename):
 def resolution_in_degree(latitude, meters):
     """Convert resolution in meters to degree based on Latitude
 
-    :param latitude:
-    :param meters:
-    :return:
+    Note that this is an approximation.
+
+    Parameters
+    ----------
+    latitude : float
+    meters : float
+
+    Returns
+    -------
+    float
     """
 
     earth_radius = 6378137
