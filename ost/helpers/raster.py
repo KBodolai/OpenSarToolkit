@@ -26,7 +26,19 @@ from ost.helpers import helpers as h
 
 
 def polygonize_ls(infile, outfile, driver="GeoJSON"):
+    """Polygonize a singleband raster into a geojson (?needs context?)
 
+    Parameters
+    ----------
+    infile : str, Path
+    outfile : str, Path
+    driver : str, default="GeoJSON"
+        fiona supported drivers
+
+    Returns
+    -------
+    None
+    """
     with rio.open(infile) as src:
         image = src.read(1)
 
@@ -51,9 +63,15 @@ def polygonize_ls(infile, outfile, driver="GeoJSON"):
 def _closure_procedure(geojson_shape, buffer):
     """Helper function to buffer geo-json like geometries and close islands
 
-    :param geojson_shape:
-    :param buffer:
-    :return:
+    Parameters
+    ----------
+    geojson_shape : shapely.Geometry
+        (?check correctnes?)
+    buffer : float
+
+    Returns
+    -------
+    shapely.Geometry
     """
 
     # close islands
@@ -76,15 +94,17 @@ def _closure_procedure(geojson_shape, buffer):
 def polygonize_bounds(infile, outfile, mask_value=1, driver="GeoJSON"):
     """Polygonize a raster mask based on a mask value
 
-    :param infile:
-    :type infile:
-    :param outfile:
-    :type outfile:
-    :param mask_value:
-    :type mask_value: int/float, optional
-    :param driver:
-    :type driver: str, optional
-    :return:
+    Parameters
+    ----------
+    infile : str, Path
+    outfile : str, Path
+    mask_value : int, float, default=1
+    driver : str, default="GeoJSON"
+        fiona supported driver
+
+    Returns
+    -------
+    None
     """
 
     with rio.open(infile) as src:
@@ -117,15 +137,23 @@ def polygonize_bounds(infile, outfile, mask_value=1, driver="GeoJSON"):
             dst.writerecords(results)
 
 
-def outline(infile, outfile, ndv=0, less_then=False, driver="GeoJSON"):
+def outline(infile, outfile, ndv=0, less_than=False, driver="GeoJSON"):
     """Generates a vector file with the valid areas of a raster file
 
-    :param infile: input raster file
-    :param outfile: output shapefile
-    :param ndv: no-data-value
-    :param less_then:
-    :param driver:
-    :return:
+    Parameters
+    ----------
+    infile : str, Path
+    outfile : str, Path
+    ndv : int, float
+        NoData value
+    less_than : bool, default=False
+        whether to also mask values smaller than the NoData value
+    driver : bool, default="GeoJSON"
+        fiona supported driver
+
+    Returns
+    -------
+    None
     """
 
     with rio.open(infile) as src:
@@ -153,7 +181,7 @@ def outline(infile, outfile, ndv=0, less_then=False, driver="GeoJSON"):
                 stack[stack == np.nan] = 0
                 min_array = np.min(stack, axis=0)
 
-                if less_then is True:
+                if less_than is True:
                     min_array[min_array <= ndv] = 0
                 else:
                     min_array[min_array == ndv] = 0
@@ -173,8 +201,13 @@ def image_bounds(data_dir):
 
     This function for all files within a dimap data directory
 
-    :param data_dir:
-    :return:
+    Parameters
+    ----------
+    data_dir : str, Path?
+
+    Returns
+    -------
+    None
     """
     filelist = []
     for file in data_dir.glob("*img"):
@@ -197,8 +230,15 @@ def image_bounds(data_dir):
 def convert_to_db(pow_array):
     """Convert array of SAR power to decibel
 
-    :param pow_array:
-    :return:
+    Parameters
+    ----------
+    pow_array : array_like
+        SAR scene array in power units
+
+    Returns
+    -------
+    db_array : numpy array
+        Array conveted to decibels
     """
 
     import warnings
@@ -219,11 +259,17 @@ def convert_to_db(pow_array):
 def scale_to_int(float_array, min_value, max_value, data_type):
     """Convert a float array to integer by linear scaling between min and max
 
-    :param float_array:
-    :param min_value:
-    :param max_value:
-    :param data_type:
-    :return:
+    Parameters
+    ----------
+    float_array : array_like
+    min_value : int
+    max_value : int
+    data_type : data type
+
+    Returns
+    -------
+    array_like
+        Scaled integer array
     """
 
     import warnings
@@ -257,9 +303,14 @@ def scale_to_int(float_array, min_value, max_value, data_type):
 def rescale_to_float(int_array, data_type):
     """Re-convert a previously converted integer array back to float
 
-    :param int_array:
-    :param data_type:
-    :return:
+    Parameters
+    ----------
+    int_array : array_like
+    data_type : numpy data type
+
+    Returns
+    -------
+    array_like
     """
 
     # convert to float and turn 0s to nan
@@ -283,8 +334,13 @@ def rescale_to_float(int_array, data_type):
 def fill_internal_nans(array):
     """Function that fills no-data values with interpolation
 
-    :param array:
-    :return:
+    Parameters
+    ----------
+    array : array_like
+
+    Returns
+    -------
+    array_like
     """
     print("a")
     a = array[0].astype("float32")
@@ -322,17 +378,23 @@ def mask_by_shape(
 ):
     """Mask a raster layer with a vector file (including data conversions)
 
-    :param infile:
-    :param outfile:
-    :param vector:
-    :param to_db:
-    :param datatype:
-    :param rescale:
-    :param min_value:
-    :param max_value:
-    :param ndv:
-    :param description:
-    :return:
+    Parameters
+    ----------
+    infile : str, Path
+    outfile : str, Path
+    vector : str, Path
+    to_db : bool, default=False
+    datatype : str, default="float32"
+    rescale : bool, default=True
+    min_value : float, default=0.000001
+    max_value : float, default=1
+    ndv : float, default=None
+        noData value
+    description : bool, default=True
+
+    Returns
+    -------
+    None
     """
 
     # import vector geometries
@@ -394,7 +456,17 @@ def mask_by_shape(
 
 
 def create_tscan_vrt(timescan_dir, config_file):
+    """Create a timescan virtual raster
 
+    Parameters
+    ----------
+    timescan_dir : str, Path
+    config_file : str, Path
+
+    Returns
+    -------
+    None
+    """
     # load ard parameters
     if isinstance(config_file, dict):
         config_dict = config_file
@@ -460,9 +532,14 @@ def create_tscan_vrt(timescan_dir, config_file):
 def norm(array, percentile=False):
     """Normalize array by its min/max or 2- and 98 percentile
 
-    :param array:
-    :param percentile:
-    :return:
+    Parameters
+    ----------
+    array : array_like
+    percentile : bool, default=False
+
+    Returns
+    -------
+    array_like
     """
     if percentile:
         array_min, array_max = (np.percentile(array, 2), np.percentile(array, 98))
@@ -473,11 +550,17 @@ def norm(array, percentile=False):
 
 
 def visualise_rgb(filepath, shrink_factor=25):
-    """
+    """Visualise a raster in rgb (using 3 channels, or stacking one)
 
-    :param filepath:
-    :param shrink_factor:
-    :return:
+    Parameters
+    ----------
+    filepath : str, Path
+    shrink_factor : float
+        how much to shrink the image (to speed up computation)
+
+    Returns
+    -------
+        None
     """
 
     import matplotlib.pyplot as plt
@@ -515,7 +598,7 @@ def visualise_rgb(filepath, shrink_factor=25):
 
 
 def get_min(file, dtype="float32"):
-
+    """?"""
     mins = {
         "bs.VV": -20,
         "bs.VH": -25,
@@ -548,7 +631,7 @@ def get_min(file, dtype="float32"):
 
 
 def get_max(file, dtype="float32"):
-
+    """?"""
     maxs = {
         "bs.VV": 0,
         "bs.VH": -12,
@@ -581,7 +664,18 @@ def get_max(file, dtype="float32"):
 
 
 def calc_min(band, stretch="minmax"):
+    """Calculates minimum or the 2nd percentile of a band
 
+    Parameters
+    ----------
+    band : array_like
+    stretch : str, default="minmax"
+        stretching protocol, either "minmax" or "percentile"
+
+    Returns
+    -------
+    float
+    """
     if stretch == "percentile":
         band_min = np.percentile(band, 2)
     elif stretch == "minmax":
@@ -595,7 +689,18 @@ def calc_min(band, stretch="minmax"):
 
 
 def calc_max(band, stretch="minmax"):
+    """Calculates maximum or the 98th percentile of a band
 
+    Parameters
+    ----------
+    band : array_like
+    stretch : str, default="minmax"
+        stretching protocol, either "minmax" or "percentile"
+
+    Returns
+    -------
+    float
+    """
     if stretch == "percentile":
         band_max = np.percentile(band, 98)
     elif stretch == "minmax":
@@ -608,7 +713,7 @@ def calc_max(band, stretch="minmax"):
 
 
 def stretch_to_8bit(file, layer, dtype, aut_stretch=False):
-
+    """?"""
     if aut_stretch:
         min_val = calc_min(layer, "percentile")
         max_val = calc_max(layer, "percentile")
@@ -625,7 +730,18 @@ def stretch_to_8bit(file, layer, dtype, aut_stretch=False):
 
 
 def combine_timeseries(processing_dir, config_dict, timescan=True):
+    """?
 
+    Parameters
+    ----------
+    processing_dir : str, Path
+    config_dict : dict
+    timescan : bool, default=True
+
+    Returns
+    -------
+    None
+    """
     # namespaces for folder
     comb_dir = processing_dir / "combined"
     if comb_dir.exists():
@@ -747,16 +863,27 @@ def create_rgb_jpeg(
     date=None,
     filetype=None,
 ):
-    """
+    """Creates a jpeg stacking 3 bands so it can be visualised as an image
 
-    :param filelist:
-    :param outfile:
-    :param shrink_factor:
-    :param resampling_factor: 5 is average
-    :param plot:
-    :param date:
-    :param filetype:
-    :return:
+    Parameters
+    ----------
+    filelist : list
+        list of paths for the bands to stack
+    outfile : str, Path, optional, default=None
+        if specified, it will save the stacked image to the provided path
+    shrink_factor : float, default=1
+        factor to shrink the image to reduce asset size
+    resampling_factor : float, default=5
+        5 is average
+    plot : bool, default=False
+    date : , default=None
+    filetype : , default=None
+
+    Returns
+    -------
+    None
+    RuntimeError
+        if more than 3 bands are passed
     """
 
     import matplotlib.pyplot as plt
@@ -890,7 +1017,26 @@ def create_timeseries_animation(
     add_dates=False,
     prefix=False,
 ):
+    """Creates a gif animation of a S1 timeseries
 
+    Parameters
+    ----------
+    timeseries_folder : str, Path
+    product_list : list
+    out_folder : str, Path
+    shrink_factor : float, default=1
+    resampling_factor : float, default=5
+    duration : float, default=1
+        duration of each frame in seconds ?
+    add_dates : bool, default=False
+        whether to add the dates over the gif
+    prefix : bool, default=False
+        prefix to the output gif name
+
+    Returns
+    -------
+    None
+    """
     # get number of products
     nr_of_products = len(list(timeseries_folder.glob(f"*{product_list[0]}.tif")))
 
