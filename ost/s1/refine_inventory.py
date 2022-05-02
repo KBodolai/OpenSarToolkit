@@ -1,8 +1,9 @@
 import itertools
-import geopandas as gpd
 import logging
 import warnings
 
+import pandas as pd
+import geopandas as gpd
 from shapely.ops import unary_union
 
 # import internal modules
@@ -243,7 +244,7 @@ def _remove_incomplete_tracks(aoi_gdf, inventory_df):
             intersect_date = aoi_gdf.geometry.intersection(date_union).area.sum()
 
             if intersect_track <= intersect_date + 0.15:
-                out_frame = out_frame.append(gdf_date)
+                out_frame = pd.concat([out_frame, gdf_date])
 
     logger.info(
         f" {len(out_frame)} frames remain after" f" removal of non-full AOI crossing"
@@ -349,7 +350,7 @@ def _forward_search(aoi_gdf, inventory_df, area_reduce=0):
             union = gdf.geometry.unary_union
 
             # add to overall union and to out_frame
-            out_frame = out_frame.append(gdf)
+            out_frame = pd.concat([out_frame, gdf])
 
             # just for first loop
             if gdf_union is None:
@@ -430,7 +431,7 @@ def _backward_search(aoi_gdf, inventory_df, datelist, area_reduce=0):
                     union = track_gdf.geometry.unary_union
 
                     # add to overall union and to out_frame
-                    temp_df = temp_df.append(track_gdf)
+                    temp_df = pd.concat([temp_df, track_gdf])
 
                     # just for first loop
                     if gdf_union is None:
@@ -448,7 +449,7 @@ def _backward_search(aoi_gdf, inventory_df, datelist, area_reduce=0):
                     # we break the loop if we found enough
                     if intersect_area >= aoi_area - area_reduce:
                         # cleanup scenes
-                        out_frame = out_frame.append(temp_df)
+                        out_frame = pd.concat([out_frame, temp_df])
                         temp_df = gpd.GeoDataFrame(columns=inventory_df.columns)
                         gdf_union = None
 

@@ -10,6 +10,7 @@ if "PROJ_LIB" in list(os.environ.keys()):
     del os.environ["PROJ_LIB"]
 # ------ bug of rasterio --------
 
+import re
 import json
 import urllib.request
 import urllib.parse
@@ -23,7 +24,7 @@ import geopandas as gpd
 from shapely.wkt import loads
 
 from ost.helpers import vector as vec, raster as ras
-from ost.helpers import scihub, helpers as h, srtm
+from ost.helpers import scihub, helpers as h, srtm, copdem
 from ost.helpers.settings import set_log_level, setup_logfile, OST_ROOT
 from ost.helpers.settings import check_ard_parameters
 
@@ -138,7 +139,7 @@ class Generic:
             self.start = start
         except ValueError:
             raise ValueError(
-                "Incorrect date format for start date. " "It should be YYYY-MM-DD"
+                "Incorrect date format for start date. It should be YYYY-MM-DD"
             )
 
         try:
@@ -146,7 +147,7 @@ class Generic:
             self.end = end
         except ValueError:
             raise ValueError(
-                "Incorrect date format for end date. " "It should be YYYY-MM-DD"
+                "Incorrect date format for end date. It should be YYYY-MM-DD"
             )
 
         # ------------------------------------------
@@ -253,7 +254,8 @@ class Sentinel1(Generic):
         if product_type in ["*", "RAW", "SLC", "GRD"]:
             self.product_type = product_type
         else:
-            raise ValueError("Product type must be one out of '*', 'RAW', 'SLC', 'GRD'")
+            raise ValueError("Product type must be one out of '*', 'RAW', "
+                             "'SLC', 'GRD'")
 
         # ------------------------------------------
         # 3 Check and set beam mode
@@ -412,15 +414,15 @@ class Sentinel1(Generic):
         :return:
         """
         if inventory_df is None:
-            download_size = (
-                self.inventory["size"].str.replace(" GB", "").astype("float32").sum()
-            )
+            size = self.inventory["size"]
         else:
-            download_size = (
-                inventory_df["size"].str.replace(" GB", "").astype("float32").sum()
-            )
+            size = inventory_df["size"]
 
-        logger.info(f"There are about {download_size} GB need to be downloaded.")
+        size = size.apply(
+            lambda x: re.sub(' GB', '', x) if re.search(' GB', str(x)) else re.sub(' MB', '', x) / 1024
+        ).astype('float32')
+
+        logger.info(f"There are about {size} GB need to be downloaded.")
 
     def refine_inventory(
         self,
@@ -742,6 +744,11 @@ class Sentinel1Batch(Sentinel1):
         logger.info("Pre-downloading SRTM tiles")
         srtm.download_srtm(self.aoi)
 
+    def pre_download_copdem(self):
+
+        logger.info("Pre-downloading Copernicus DEM tiles")
+        copdem.download_copdem(self.aoi)
+
     def bursts_to_ards(
         self, timeseries=False, timescan=False, mosaic=False, overwrite=False
     ):
@@ -834,9 +841,11 @@ class Sentinel1Batch(Sentinel1):
         # self.ard_parameters['resolution'] = h.resolution_in_degree(
         #    self.center_lat, self.ard_parameters['resolution'])
 
-        # if self.config_dict['max_workers'] > 1 and self.ard_parameters['single_ARD']['dem']['dem_name'] == 'SRTM 1Sec HGT':
-        #    self.pre_download_srtm()
+        if self.config_dict['max_workers'] > 1 and self.ard_parameters['single_ARD']['dem']['dem_name'] == 'SRTM 1Sec HGT':
+            self.pre_download_srtm()
 
+        if self.config_dict['max_workers'] > 1 and self.ard_parameters['single_ARD']['dem']['dem_name'] == "Copernicus 30m Global DEM":
+            self.pre_download_copdem()
         # --------------------------------------------
         # 6 run the burst to ard batch routine (up to 3 times if needed)
         i = 1
